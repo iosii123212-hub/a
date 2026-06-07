@@ -1,6 +1,14 @@
-2.png
-https://shlomoraviv.github.io/Raviv-Digital/
-3.png
-https://bnebrak.com/
-4.png
-https://mail.google.com/mail/u/0/?fs=1&to=eliyahubloy@gmail.com&tf=cm
+[
+  {
+    "image": "2.png",
+    "link": "https://shlomoraviv.github.io/Raviv-Digital/"
+  },
+  {
+    "image": "3.png",
+    "link": "https://bnebrak.com/"
+  },
+  {
+    "image": "4.png",
+    "link": "https://mail.google.com/mail/u/0/?fs=1&to=eliyahubloy@gmail.com&tf=cm"
+  }
+]
