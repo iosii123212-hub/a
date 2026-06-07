@@ -228,7 +228,7 @@
             color: var(--text-secondary);
         }
 
-        /* גלריה והגדרת טורים דינמיים */
+        /* גלריה */
         .gallery-container {
             max-width: 1800px;
             margin: 30px auto;
@@ -238,11 +238,9 @@
         .gallery {
             display: grid;
             gap: 20px;
-            /* ברירת מחדל למובייל */
             grid-template-columns: repeat(1, minmax(0, 1fr));
         }
 
-        /* הגדרות רספונסיביות בסיסיות (כאשר לא נבחר טור ספציפי) */
         @media (min-width: 480px) {
             .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
@@ -253,10 +251,9 @@
             .gallery { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
         @media (min-width: 1200px) {
-            .gallery { grid-template-columns: repeat(5, minmax(0, 1fr)); } /* ברירת מחדל למסכי מחשב */
+            .gallery { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         }
 
-        /* מחלקות CSS לשליטה דינמית של כפתורי הבחירה (במסכים מעל 768px) */
         @media (min-width: 768px) {
             .gallery.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
             .gallery.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
@@ -462,7 +459,7 @@
             border-radius: 20px;
         }
 
-        /* מודאל פרסומת קופצת */
+        /* מודאל פרסומת */
         .ad-modal {
             position: fixed;
             top: 0;
@@ -535,7 +532,6 @@
             z-index: 10;
         }
 
-        /* התראות */
         .toast {
             position: fixed;
             bottom: 30px;
@@ -600,7 +596,6 @@
     </div>
 
     <div class="gallery-container">
-        <!-- הגדרת מחלקת ברירת המחדל cols-5 -->
         <div class="gallery cols-5" id="galleryContainer"></div>
         <div class="load-more-section" id="loadMoreSection" style="display: none;">
             <button class="load-more-btn" id="loadMoreBtn">טען תמונות נוספות</button>
@@ -615,7 +610,7 @@
         <button class="lightbox-btn lightbox-next" onclick="navigateLightbox(1); event.stopPropagation();">&#10095;</button>
     </div>
 
-    <!-- מודאל פרסומת קופצת מקושרת -->
+    <!-- מודאל פרסומת -->
     <div class="ad-modal" id="adModal" onclick="closeAd(event)">
         <div class="ad-container" onclick="event.stopPropagation();">
             <button class="ad-close-btn" onclick="closeAd(event)">&times;</button>
@@ -651,20 +646,21 @@
             }
         });
 
-        // פונקציית שינוי טורים דינמית מבוססת קלאסים
         function setLayout(cols, btnElement) {
             const gallery = document.getElementById('galleryContainer');
-            // איפוס מחלקות קיימות והחלת המחלקה החדשה
             gallery.className = 'gallery cols-' + cols;
             
-            // עדכון כפתור פעיל
             document.querySelectorAll('.layout-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
         }
 
         const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico', 'heic', 'heif', 'avif'];
-        let rawFiles = [];
+        let allFetchedFiles = []; // מכיל את כלל הקבצים, כולל פרסומות
+        let rawFiles = [];        // מכיל רק תמונות שאינן פרסומות לגלריה
         let filteredFiles = [];
+        let adList = [];          // רשימת הפרסומות מתוך 1.json
+        let lastShownAdName = ''; // מעקב למניעת כפילות פרסומת ברצף
+        
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
         let currentLoadedIndex = 0;
         const limitPerPage = 100;
@@ -703,50 +699,67 @@
             }
 
             try {
+                // שלב 1: טעינת רשימת הקבצים המלאה מ-GitHub
                 const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/`);
                 if (!response.ok) throw new Error();
-                const files = await response.json();
+                allFetchedFiles = await response.json();
 
-                rawFiles = files.filter(f => {
+                // שלב 2: טעינת קובץ הגדרות הפרסומות 1.json (אם קיים)
+                try {
+                    const adResponse = await fetch('1.json');
+                    if (adResponse.ok) {
+                        adList = await adResponse.json();
+                    }
+                } catch (e) {
+                    console.log('לא נמצא קובץ פרסומות 1.json.');
+                }
+
+                // יצירת רשימה של שמות קבצי הפרסומות בפורמט קטן להשוואה
+                const adFilenames = Array.isArray(adList) ? adList.map(item => item.image.toLowerCase()) : [];
+
+                // שלב 3: סינון התמונות לגלריה הרגילה (ללא אלו המוגדרות כפרסומות ב-1.json)
+                rawFiles = allFetchedFiles.filter(f => {
                     if (f.type !== 'file') return false;
                     const ext = f.name.split('.').pop().toLowerCase();
-                    return imageExtensions.includes(ext);
+                    const isSupportedImage = imageExtensions.includes(ext);
+                    const isAdImage = adFilenames.includes(f.name.toLowerCase());
+                    
+                    return isSupportedImage && !isAdImage;
                 });
 
                 buildFilters();
                 applyFilterAndSort();
-                loadAdvertisements();
+
+                // הפעלת פרסומת מיידית ראשונה וקביעת טיימר מחזורי של 5 דקות
+                if (adList.length > 0) {
+                    triggerAdPopup(); 
+                    setInterval(triggerAdPopup, 5 * 60 * 1000); // 5 דקות במילישניות
+                }
 
             } catch (e) {
                 statsText.textContent = 'שגיאה בטעינת קבצים. ודא שהמאגר ציבורי.';
             }
         }
 
-        async function loadAdvertisements() {
-            try {
-                const res = await fetch('1.json');
-                if (!res.ok) return;
-                const adList = await res.json();
+        // בחירה והקפצה של פרסומת אקראית ללא חזרה על הקודמת ברצף
+        function triggerAdPopup() {
+            if (!Array.isArray(adList) || adList.length === 0) return;
 
-                if (Array.isArray(adList) && adList.length > 0) {
-                    const now = Date.now();
-                    const lastAdShown = localStorage.getItem('lastAdShownTime');
-                    const adCooldown = 5 * 60 * 1000; 
+            let availableAds = adList;
+            
+            // סינון הפרסומת האחרונה שהוצגה (רק אם יש יותר מפרסומת אחת בקובץ)
+            if (adList.length > 1 && lastShownAdName !== '') {
+                availableAds = adList.filter(item => item.image.toLowerCase() !== lastShownAdName.toLowerCase());
+            }
 
-                    if (!lastAdShown || (now - lastAdShown > adCooldown)) {
-                        const selectedAd = adList[Math.floor(Math.random() * adList.length)];
-                        const adFileObj = rawFiles.find(f => f.name.toLowerCase() === selectedAd.image.toLowerCase());
-                        
-                        if (adFileObj) {
-                            setTimeout(() => {
-                                showAd(adFileObj.download_url, selectedAd.link);
-                                localStorage.setItem('lastAdShownTime', now);
-                            }, 2500);
-                        }
-                    }
-                }
-            } catch (e) {
-                console.log('פרסומת לא הופעלה (תקופת המתנה פעילה או שגיאת קריאת קובץ הגדרות).');
+            const selectedAd = availableAds[Math.floor(Math.random() * availableAds.length)];
+            lastShownAdName = selectedAd.image;
+
+            // חיפוש נתוני הקובץ מתוך הרשימה הכללית של GitHub
+            const adFileObj = allFetchedFiles.find(f => f.name.toLowerCase() === selectedAd.image.toLowerCase());
+            
+            if (adFileObj) {
+                showAd(adFileObj.download_url, selectedAd.link);
             }
         }
 
@@ -886,7 +899,6 @@
             const shareRow = document.createElement('div');
             shareRow.className = 'share-row';
 
-            // קובץ קישור בודד ללא Markdown למניעת כפילות ובלבול
             const shareBox = createShareBox(file.download_url, 'קישור');
             shareRow.appendChild(shareBox);
 
