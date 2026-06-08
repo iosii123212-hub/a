@@ -861,11 +861,15 @@
 
                 const adNames = Array.isArray(adList) ? adList.map(a => a.image.toLowerCase()) : [];
 
-                // סינון תמונות בלבד (ללא פרסומות לגלריה)
+                // סינון תמונות בלבד (ללא פרסומות לגלריה וללא לוגו האתר)
                 rawFiles = allFetchedFiles.filter(f => {
                     if (f.type !== 'file') return false;
-                    const ext = f.name.split('.').pop().toLowerCase();
-                    return imageExtensions.includes(ext) && !adNames.includes(f.name.toLowerCase());
+                    const fileNameLower = f.name.toLowerCase();
+                    const ext = fileNameLower.split('.').pop();
+                    
+                    return imageExtensions.includes(ext) && 
+                           !adNames.includes(fileNameLower) && 
+                           fileNameLower !== '1.png'; // הסתרת הלוגו מהגלריה
                 });
 
                 loader.style.display = 'none';
