@@ -233,7 +233,8 @@
         .sidebar-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; margin-bottom: -10px; }
         .sidebar-ad-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); display: block; text-decoration: none; transition: box-shadow 0.3s; cursor: pointer;}
         .sidebar-ad-card:hover { box-shadow: var(--shadow-md); border-color: var(--accent-soft); }
-        .sidebar-ad-card img { width: 100%; height: auto; max-height: 250px; object-fit: cover; display: block; transition: opacity 0.5s ease; }
+        /* תוקן חיתוך הפרסומות הצדדיות - שמירה מדויקת על אורך ורוחב טבעיים */
+        .sidebar-ad-card img { width: 100%; height: auto; display: block; transition: opacity 0.5s ease; }
         .sidebar-ad-card img.fading { opacity: 0.2; }
 
         /* מודאלים */
@@ -255,9 +256,21 @@
         }
         .modal-close:hover { background: var(--danger); color: white; border-color: var(--danger); }
         .modal-close svg { width: 16px; height: 16px; fill: currentColor; }
+        
+        /* עיצוב פופאפ פרסומת מיוחד - שמירה על פרופורציות בלי להיחתך */
+        .ad-popup-img {
+            max-width: 90vw;
+            max-height: 80vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            background: var(--bg-surface);
+            padding: 5px;
+            border-radius: var(--radius-lg);
+            display: block;
+        }
 
         /* לייטבוקס ועורך תמונות */
-        /* הוגבל הגובה כדי להשאיר מקום מלא לעורך למטה */
         .lb-img { max-width: 100%; max-height: 55vh; border-radius: calc(var(--radius-lg) - 6px); object-fit: contain; transition: filter 0.2s, transform 0.3s; margin: 0 auto; display: block;}
         .lb-controls-wrap { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 15px; width: 100%;}
         
@@ -409,12 +422,12 @@
         </div>
     </div>
     
-    <!-- פופאפ פרסומת מרכזי -->
+    <!-- פופאפ פרסומת מרכזי (מעודכן פרופורציות) -->
     <div class="modal-overlay" id="adModal" onclick="closeModal('adModal')">
-        <div class="modal-content" onclick="event.stopPropagation()" style="background:transparent; border:none; box-shadow:none;">
-            <button class="modal-close" style="top:-20px; right:-20px;" onclick="closeModal('adModal')">&times;</button>
-            <a href="#" id="popupAdLink" target="_blank">
-                <img src="" alt="מבצע מיוחד" id="popupAdImg" class="ad-popup-img" style="background:var(--bg-surface); padding:5px; border-radius:var(--radius-lg); max-height:80vh;">
+        <div class="modal-content" onclick="event.stopPropagation()" style="background:transparent; border:none; box-shadow:none; width:max-content; margin:0 auto;">
+            <button class="modal-close" style="top:-15px; right:-15px;" onclick="closeModal('adModal')">&times;</button>
+            <a href="#" id="popupAdLink" target="_blank" style="display:block;">
+                <img src="" alt="מבצע מיוחד" id="popupAdImg" class="ad-popup-img">
             </a>
         </div>
     </div>
